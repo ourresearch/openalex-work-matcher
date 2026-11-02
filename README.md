@@ -30,12 +30,11 @@ candidates Claude Opus 5.5 labelled.
 | Held-out records | 9,154 | 7,392 | 99.04% (98.8–99.2%) | 93.9% |
 | Frozen gold set: every candidate labelled, disputes settled by a person | 3,359 | 1,044 | 99.45% (98.8–99.7%) | 94.2% |
 
-**The judged nights** are records drawn from 8 nights in October 2026, matched by the matcher while it ran beside the old rule,
-and judged by Claude Opus 5.5, with GPT-6.1 Sol and Claude Fable 5.1 as a panel on the disputed ones, under
-[written rules](benchmarks/README.md#what-right-means); the old rule is scored on the same records with the same labels.
-**The held-out records** are part of the 100,000 kept back from training; the threshold for joining (0.910) was set on them, so their 99% is partly by design, and the nights and the gold set are the independent checks. **The gold set** drew 3,458 records from three
-nights before any model was trained; 3,359 had a work they could join (the other 99 had no candidate, or only candidates of a
-type they can never join). Ranges: 90% for the nights (resampled within the sample's cells), 95% for the other two.
+**Judged nights:** matched while the matcher ran beside the old rule (scored on the same records), judged by Claude Opus 5.5
+with a panel (GPT-6.1 Sol, Claude Fable 5.1) on disputes, under [written rules](benchmarks/README.md#what-right-means).
+**Held-out:** kept back from training, but the 0.910 threshold was set on them, so the nights and gold set are the
+independent checks. **Gold:** 3,458 records drawn before any model was trained; 3,359 had a work they could join. Ranges:
+90% for the nights, 95% for the others.
 
 The held-out row leaves out the copy rule (step 5 below), because its labels name one work per record and can't credit a
 merge into a second copy of the same paper; with the rule it reads 98.74% / 94.5%, and every one of the 23 extra merges its
