@@ -65,7 +65,8 @@ def main():
         path = fetch(tag, files[name], args.to)
         if name.endswith(".tar"):
             with tarfile.open(path) as t:
-                t.extractall(args.to, filter="data")
+                # the "data" filter refuses unsafe paths; older Pythons lack it (the archive holds two plain files)
+                t.extractall(args.to, **({"filter": "data"} if hasattr(tarfile, "data_filter") else {}))
             print(f"  unpacked into {os.path.join(args.to, name[:-4])}/")
 
 
