@@ -20,15 +20,22 @@ worse mistake, because it hides a paper inside another one, so the matcher is tu
 record as its own work when it is less sure. **Duplicates it finds** (recall) is the share of records that have a match in
 OpenAlex that it merges with that match.
 
-These are 7,974 records drawn from 8 nights of real incoming records in October 2026, matched by the matcher while it ran
-beside the old rule, and judged by Claude Opus 5.5, with GPT-6.1 Sol and Claude Fable 5.1 as a panel on the disputed ones,
-under [written rules](benchmarks/README.md#what-right-means). The old rule is scored on the same records with the same labels.
+**Tested on 20,487 records the models never saw, with 12,618 of the matcher's merges checked one by one.** None of these
+records were used in training. The models were trained on a separate 100,000 incoming records and 11,728 older works, whose
+candidates Claude Opus 5.5 labelled.
 
-| Set | Right when it merges | Duplicates it finds |
-|---|---:|---:|
-| 8 judged nights (7,974 records) | 99.1% | 92.2% |
-| Frozen gold set (3,359 records, every candidate labelled, disputes settled by a person) | 99.45% | 94.2% |
-| Held-out records the models never saw (9,154) | 99.04% | 93.9% |
+| Test set | Records | Merges checked | Right when it merges | Duplicates it finds |
+|---|---:|---:|---:|---:|
+| 8 judged nights of real incoming records | 7,974 | 4,182 | 99.1% (98.1–99.7%) | 92.2% |
+| Held-out records | 9,154 | 7,392 | 99.04% (98.8–99.2%) | 93.9% |
+| Frozen gold set: every candidate labelled, disputes settled by a person | 3,359 | 1,044 | 99.45% (98.8–99.7%) | 94.2% |
+
+**The judged nights** are records drawn from 8 nights in October 2026, matched by the matcher while it ran beside the old rule,
+and judged by Claude Opus 5.5, with GPT-6.1 Sol and Claude Fable 5.1 as a panel on the disputed ones, under
+[written rules](benchmarks/README.md#what-right-means); the old rule is scored on the same records with the same labels.
+**The held-out records** are part of the 100,000 kept back from training; the threshold for joining (0.910) was set on them, so their 99% is partly by design, and the nights and the gold set are the independent checks. **The gold set** drew 3,458 records from three
+nights before any model was trained; 3,359 had a work they could join (the other 99 had no candidate, or only candidates of a
+type they can never join). Ranges: 90% for the nights (resampled within the sample's cells), 95% for the other two.
 
 The held-out row leaves out the copy rule (step 5 below), because its labels name one work per record and can't credit a
 merge into a second copy of the same paper; with the rule it reads 98.74% / 94.5%, and every one of the 23 extra merges its
