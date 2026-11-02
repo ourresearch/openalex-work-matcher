@@ -33,7 +33,8 @@ class OpenAlex:
         params = {k: v for k, v in params.items() if v is not None}
         if self.key:
             params["api_key"] = self.key
-        url = f"{API}/{path.lstrip('/')}?{urllib.parse.urlencode(params, safe=':,|*\"')}"
+        query = urllib.parse.urlencode(params, safe=':,|*"')
+        url = f"{API}/{path.lstrip('/')}?{query}"
         for attempt in range(self.retries):
             try:
                 with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "openalex-work-matcher"}),

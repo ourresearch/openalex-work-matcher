@@ -8,7 +8,7 @@ the old-work pick-one labels (data/training/old_works/judges/opus_pick_one.jsonl
 Training rows = the 100K training draw's pairs in the `train` split (label 1 = the candidate Opus picked; an `unsure` record's
 candidates are all 0) plus the old-work shortlists (Opus's pick = 1, every other candidate shown = 0). Early stopping on the `valid`
 split. Pairs across a vetoed type boundary are never trained on. The feature order and category lists are fixed
-(features.json): xgboost 2.1.3 stores no category-to-code map, so scoring must use the same lists.
+(models/xgboost_meta.json): xgboost 2.1.3 stores no category-to-code map, so scoring must use the same lists.
 With xgboost 2.1.3 this writes a booster byte-identical to the shipped one (compare the sha256 in models/MANIFEST.json)."""
 import argparse
 import gzip
@@ -28,7 +28,7 @@ ap.add_argument("--features", required=True, help="folder holding training_featu
 ap.add_argument("--out", default="model.json")
 a = ap.parse_args()
 
-meta = json.load(open(os.path.join(HERE, "features.json")))
+meta = json.load(open(os.path.join(HERE, "..", "..", "models", "xgboost_meta.json")))
 FEATS, CATS = meta["features"], meta["categories"]
 veto = pd.read_csv(os.path.join(ROOT, "data", "training", "type_veto.csv"))
 VETO = set(zip(veto.type_a, veto.type_b))
