@@ -3,7 +3,7 @@
 How [OpenAlex](https://openalex.org) decides which work a new record belongs to. Every night, records arrive from Crossref,
 DataCite, PubMed and thousands of repositories: a journal article, its preprint, a copy in a university repository, a
 catalogue entry. Each one either joins a [work](https://help.openalex.org/data/works/) OpenAlex already has, or becomes a new
-work. Since **3 November 2026** this matcher makes that call for every new record. It replaces a rule that bound a record to
+work. From the nightly build of **3 November 2026**, this matcher makes that call for every new record. It replaces a rule that bound a record to
 the work holding the same normalized title and first author. This is **version 1.0.0**; see the [changelog](CHANGELOG.md).
 
 > **Everything is here:** the code as it runs in production, the models, a tool to run them on your own records, the training
