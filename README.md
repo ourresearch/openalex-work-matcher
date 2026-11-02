@@ -99,8 +99,6 @@ To run the matcher the way OpenAlex does, over a whole night of records in Datab
 - **Repository copies sometimes stay separate.** When a repository sends a record of a paper OpenAlex already has, and the
   record is thin (no DOI, a shortened title), the matcher can leave it as its own work. Most of the duplicates it misses
   are of this kind.
-- **Two copies arriving the same night** are not matched to each other: a record can only join a work that existed before
-  that night.
 - **Short titles** ("Editorial", "Reply") rarely match: found 69.1% for titles of three words or fewer.
 - **Types are trusted.** A record with the wrong type (a thesis typed as an article) can be kept apart from its work until
   the type is fixed.
