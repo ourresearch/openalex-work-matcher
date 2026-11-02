@@ -16,6 +16,10 @@ WORK_FIELDS = ("id,doi,title,publication_year,type,language,authorships,is_autho
 BATCH = 50
 
 
+class QueryTimeout(RuntimeError):
+    """The API stopped a query as too broad; a narrower one (fewer ids) succeeds."""
+
+
 def wid(x):
     """'https://openalex.org/W123' | 'W123' | 123 -> 123"""
     if isinstance(x, int):
@@ -46,8 +50,11 @@ class OpenAlex:
             except urllib.error.HTTPError as e:
                 if e.code == 404:
                     return {"results": [], "meta": {"count": 0}}
+                body = e.read()
+                if e.code == 504 and b"query_timeout" in body:
+                    raise QueryTimeout(f"OpenAlex API query timeout for {path}")
                 if e.code not in (429, 500, 502, 503, 504) or attempt == self.retries - 1:
-                    raise RuntimeError(f"OpenAlex API {e.code} for {path}: {e.read()[:300]!r}")
+                    raise RuntimeError(f"OpenAlex API {e.code} for {path}: {body[:300]!r}")
             except (urllib.error.URLError, TimeoutError):
                 if attempt == self.retries - 1:
                     raise
@@ -79,12 +86,22 @@ class OpenAlex:
         return out
 
     def locations_of(self, ids):
-        """{work id: [API location]} for the given work ids."""
-        ids, out = sorted({wid(i) for i in ids}), {}
-        for i in range(0, len(ids), BATCH):
-            chunk = ids[i:i + BATCH]
-            for l in self.locations("work_id:" + "|".join(f"W{x}" for x in chunk)):
+        """{work id: [API location]} for the given work ids; a batch the API finds too broad is split in half."""
+        out = {}
+
+        def fetch(chunk):
+            try:
+                rows = self.locations("work_id:" + "|".join(f"W{x}" for x in chunk))
+            except QueryTimeout:
+                if len(chunk) == 1:
+                    raise
+                fetch(chunk[:len(chunk) // 2]); fetch(chunk[len(chunk) // 2:])
+                return
+            for l in rows:
                 out.setdefault(wid(l["work_id"]), []).append(l)
+        ids = sorted({wid(i) for i in ids})
+        for i in range(0, len(ids), BATCH):
+            fetch(ids[i:i + BATCH])
         return out
 
 

@@ -2,8 +2,8 @@
 
 This folder is the production code, copied as deployed (the commit is in [SOURCE](SOURCE)): a Databricks job that runs
 inside OpenAlex's nightly build, after the night's records are parsed and typed and before they are written to works.
-Internal names (warehouse ids, the Modal workspace, volume and secret names, the owner's email) are replaced by
-placeholders; nothing else changed. The Python package in [`../matcher/`](../matcher/) is a line-for-line port of the same
+Internal deployment details (warehouse ids, the Modal workspace and volume names, the owner's email) are replaced by
+placeholders, and no credential is included; nothing else changed. The Python package in [`../matcher/`](../matcher/) is a line-for-line port of the same
 logic for one record at a time; on a production night's own inputs its features, XGBoost scores and Qwen prompts are
 identical to these.
 

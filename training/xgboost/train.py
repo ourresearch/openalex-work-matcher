@@ -1,6 +1,6 @@
 """Train the matcher's XGBoost ranker from the released training data, exactly as the shipped model was trained.
 
-    pip install xgboost==2.1.3 pandas pyarrow
+    pip install xgboost==2.1.3 pandas pyarrow scikit-learn
     python3 training/xgboost/train.py --features <dir with training_features.parquet and old_work_features.parquet> --out model.json
 
 Inputs: the feature rows of every (record, candidate work) pair (release assets; they are what pipeline/sql/features.sql computes),

@@ -67,7 +67,7 @@ released models (see "The released models are the production models" below).
 ## Retrain XGBoost (about a minute on a 14-core machine)
 
 ```bash
-pip install xgboost==2.1.3 pandas pyarrow
+pip install xgboost==2.1.3 pandas pyarrow scikit-learn
 python3 tools/download.py training_features.parquet old_work_features.parquet --to assets/
 python3 training/xgboost/train.py --features assets/ --out model.json
 ```
@@ -124,7 +124,12 @@ preprint joins W3035965352 by its DOI (`identifier:doi`), and the made-up record
 `--stage1-only` prints the first two steps' answers and the third's Qwen prompt.
 
 **Agreement with production.** We ran the tool on 400 records of the same production night, against the same works (the API
-served that night's data), and compared with what production decided: PARITY_DETAIL
+served that night's data), and compared with what production decided (one record hit an API timeout, which the client now handles). 397 of 399 records got the same decision: 383 joined the same work through Qwen
+(one of them a copy-sum join in production), 3 through copy sums, and 10 became new works on both sides. In the 2 differences
+the tool joined a work production left separate. The tool's best XGBoost candidate was production's for 396 records; its
+search found 74% of production's candidates and 75% of the works on its top-10 shortlists. That night's comparison included
+the works production had made for those records the same night, so most of them had an exact copy to find; matching records
+as they arrive (below) is the harder test.
 
 Run a record that is already in OpenAlex as if it were arriving with `--as-of <the date it arrived> --exclude-self`: works
 created on or after that date and the record's own copy are left out.

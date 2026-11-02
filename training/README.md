@@ -20,7 +20,7 @@ shipped model stopped at 781 trees. It ranks the candidates and decides only the
 under 0.01 becomes a new work.
 
 ```bash
-pip install xgboost==2.1.3 pandas pyarrow
+pip install xgboost==2.1.3 pandas pyarrow scikit-learn
 python3 training/xgboost/train.py --features <folder with the two feature parquets> --out model.json
 ```
 

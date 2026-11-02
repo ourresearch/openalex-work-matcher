@@ -51,7 +51,7 @@ released models (see "Score with the released models").
 ## Retrain XGBoost (about a minute on a 14-core machine)
 
 ```bash
-pip install xgboost==2.1.3 pandas pyarrow
+pip install xgboost==2.1.3 pandas pyarrow scikit-learn
 python3 tools/download.py training_features.parquet old_work_features.parquet --to assets/
 python3 training/xgboost/train.py --features assets/ --out model.json
 ```

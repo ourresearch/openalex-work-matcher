@@ -83,13 +83,14 @@ declared relations), `type`, `source_name`, `publisher`, `volume`, `issue`, `fir
 give, the better it matches. See [examples/records.jsonl](examples/records.jsonl).
 
 Steps 1 to 4 run on a laptop. Step 5 needs a GPU with about 24 GB; `--stage1-only` runs everything else and writes Qwen's
-prompts for scoring elsewhere. A record costs about ten API calls.
+prompts for scoring elsewhere. A record takes about eight API calls and, on a laptop, about 13 seconds.
 
-**It gives the answer OpenAlex gives.** Run on records from a production night against the same works, the tool's features
-and model scores equal production's exactly when given production's candidates, and its own API search reaches the same
-decision for [PARITY]. It differs from production in two ways: it searches the API instead of OpenAlex's own index, so it
-sees about 80% of production's lower-ranked candidates (almost never the one that matters), and the API does not serve some
-publishers' abstracts.
+**It gives the answer OpenAlex gives.** Given production's candidates, the tool's features and model scores equal
+production's exactly. Searching on its own through the API, it reached production's decision for 397 of 399 records from a
+production night ([details](REPRODUCE.md#run-the-matcher-on-records)). It differs from production in three ways: it searches
+the API instead of OpenAlex's own index, so it sees about three quarters of production's candidates (the best one was the same
+for 396 of 399 records); the API does not serve some publishers' abstracts; and production skips searching on titles shared by
+thousands of works ("Occurrence Download"), which the tool still searches.
 
 To run the matcher the way OpenAlex does, over a whole night of records in Databricks, see [pipeline/](pipeline/).
 
