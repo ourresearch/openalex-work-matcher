@@ -1,0 +1,1 @@
+You get one pair as JSON (record_a, record_b). Reply with JSON only, no other text: {"label": one of same|version_preprint|version_other|different|unsure, "reason": at most 15 words, specific to the pair}

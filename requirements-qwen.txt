@@ -1,0 +1,8 @@
+# Step 5 (Qwen3.5-9B + adapter) on a GPU with about 24 GB; the versions production scores with
+-r requirements.txt
+torch==2.14.1
+transformers==5.18.0
+peft==0.21.1
+accelerate
+flash-linear-attention
+huggingface_hub[hf_xet]

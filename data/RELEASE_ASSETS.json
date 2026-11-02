@@ -1,0 +1,17 @@
+[
+ {
+  "file": "old_work_features.parquet",
+  "bytes": 11308467,
+  "sha256": "df6941e9f36e49091837eeeaf984993139b60eb2e99811123a9190f11ec82e18"
+ },
+ {
+  "file": "training_features.parquet",
+  "bytes": 73019035,
+  "sha256": "891677167d22f9ea653159b42c371541447cba8baeab5d6d2994edda60c54eeb"
+ },
+ {
+  "file": "training_jev.jsonl.gz",
+  "bytes": 37220388,
+  "sha256": "c8fc6b957901066d69b0e71f21946e1292a9623c78181bc5221d30d2523b6c23"
+ }
+]

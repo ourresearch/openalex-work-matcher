@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 330" width="440" height="330" role="img" font-family='-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif' style="font-variant-numeric: tabular-nums">
+<title>Duplicates it finds, 8 judged nights of incoming records: Title + author rule 74.3%, New matcher 92.2%</title>
+<text x="0" y="16" fill="#707a84" font-size="18" font-weight="650" dominant-baseline="middle">Duplicates it finds</text>
+<text x="0" y="40" fill="#707a84" font-size="14" dominant-baseline="middle">Share of records with a match that it merges</text>
+<line x1="44" y1="296.0" x2="432" y2="296.0" stroke="#8b949e" stroke-width="1" stroke-opacity="0.8"/>
+<text x="36" y="296.0" fill="#707a84" font-size="12" text-anchor="end" dominant-baseline="middle">0%</text>
+<line x1="44" y1="243.0" x2="432" y2="243.0" stroke="#8b949e" stroke-width="1" stroke-opacity="0.35"/>
+<text x="36" y="243.0" fill="#707a84" font-size="12" text-anchor="end" dominant-baseline="middle">25%</text>
+<line x1="44" y1="190.0" x2="432" y2="190.0" stroke="#8b949e" stroke-width="1" stroke-opacity="0.35"/>
+<text x="36" y="190.0" fill="#707a84" font-size="12" text-anchor="end" dominant-baseline="middle">50%</text>
+<line x1="44" y1="137.0" x2="432" y2="137.0" stroke="#8b949e" stroke-width="1" stroke-opacity="0.35"/>
+<text x="36" y="137.0" fill="#707a84" font-size="12" text-anchor="end" dominant-baseline="middle">75%</text>
+<line x1="44" y1="84.0" x2="432" y2="84.0" stroke="#8b949e" stroke-width="1" stroke-opacity="0.35"/>
+<text x="36" y="84.0" fill="#707a84" font-size="12" text-anchor="end" dominant-baseline="middle">100%</text>
+<path d="M105.0,296.0 V142.5 Q105.0,138.5 109.0,138.5 H173.0 Q177.0,138.5 177.0,142.5 V296.0 Z" fill="#888780"/>
+<text x="141.0" y="124.5" fill="#707a84" font-size="17" font-weight="500" text-anchor="middle" dominant-baseline="middle">74.3%</text>
+<text x="141.0" y="314" fill="#707a84" font-size="14" font-weight="400" text-anchor="middle" dominant-baseline="middle">Title + author rule</text>
+<path d="M299.0,296.0 V104.5 Q299.0,100.5 303.0,100.5 H367.0 Q371.0,100.5 371.0,104.5 V296.0 Z" fill="#2a78d6"/>
+<text x="335.0" y="86.5" fill="#707a84" font-size="20" font-weight="700" text-anchor="middle" dominant-baseline="middle">92.2%</text>
+<text x="335.0" y="314" fill="#707a84" font-size="14" font-weight="600" text-anchor="middle" dominant-baseline="middle">New matcher</text>
+</svg>

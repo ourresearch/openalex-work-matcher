@@ -1,0 +1,103 @@
+"""Match Locations To Works: shared helpers for the job's notebooks. SQL files run on a SQL warehouse through the
+statement API (PROD-WH by default, the warehouse End 2 End's SQL tasks use), one statement at a time (split on a line holding
+only `;`), with __KEY__ placeholders filled from pins."""
+import datetime as dt
+import difflib
+import re
+import time
+import unicodedata
+
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.sql import StatementState
+
+PROD_WH = "<warehouse-id>"
+_w = None
+
+
+def log(msg):
+    print(f"{dt.datetime.utcnow():%Y-%m-%d %H:%M:%S} UTC  {msg}", flush=True)
+
+
+def client():
+    global _w
+    if _w is None:
+        _w = WorkspaceClient()
+    return _w
+
+
+def run_statement(stmt, warehouse=PROD_WH, max_rows=60, max_minutes=30):
+    """Run one statement, poll until done, raise on failure; return up to max_rows result rows as dicts. A statement past
+    max_minutes, or one whose task is cancelled, is cancelled on the warehouse too (a cancelled run left one running 2.5 h
+    on PROD-WH, 2026-10-30)."""
+    w, t = client(), time.time()
+    r = w.statement_execution.execute_statement(statement=stmt, warehouse_id=warehouse, wait_timeout="0s")
+    try:
+        while r.status.state in (StatementState.PENDING, StatementState.RUNNING):
+            if time.time() - t > max_minutes * 60:
+                raise TimeoutError(f"statement {r.statement_id} still running after {max_minutes} min")
+            time.sleep(5)
+            for attempt in range(6):   # the API's read timeout is transient; the statement keeps running server-side
+                try:
+                    r = w.statement_execution.get_statement(r.statement_id)
+                    break
+                except Exception as e:
+                    log(f"poll retry {attempt + 1}: {str(e)[:120]}")
+                    time.sleep(30)
+            else:
+                raise RuntimeError(f"gave up polling statement {r.statement_id}")
+    except BaseException:
+        try:
+            w.statement_execution.cancel_execution(r.statement_id)
+            log(f"cancelled statement {r.statement_id}")
+        except Exception as e:
+            log(f"could not cancel statement {r.statement_id}: {str(e)[:120]}")
+        raise
+    body = "\n".join(l for l in stmt.splitlines() if not l.lstrip().startswith("--")).lstrip()
+    log(f"{r.status.state.value} {time.time() - t:.0f}s  {body[:90]!r}")
+    if r.status.state != StatementState.SUCCEEDED:
+        raise RuntimeError(f"statement failed: {r.status.error}\n{body[:500]}")
+    rows = []
+    if r.result and r.result.data_array:
+        cols = [c.name for c in r.manifest.schema.columns]
+        rows = [dict(zip(cols, row)) for row in r.result.data_array[:max_rows]]
+    return rows
+
+
+def run_sql_file(path, pins, warehouse=PROD_WH):
+    """Run every statement of a SQL file with __KEY__ placeholders filled; print the rows of SELECT statements."""
+    text = open(path).read()
+    for k, v in pins.items():
+        text = text.replace(f"__{k}__", str(v))
+    left = re.findall(r"__[A-Z0-9]+__", "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("--")))
+    assert not left, f"{path}: unfilled {sorted(set(left))}"
+    out = []
+    for stmt in [s.strip() for s in text.split("\n;\n") if s.strip()]:
+        rows = run_statement(stmt, warehouse)
+        for row in rows:
+            print("   ", row)
+        out = rows
+    return out
+
+
+def _ascii(s):
+    return unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
+
+
+def is_copy(a, b):
+    """Two candidate works are copies of one paper: folded titles equal (or difflib ratio >= 0.93) and >= 20 folded characters,
+    a shared author name word when both list authors (equal titles when either has none), years within 1 when both have one."""
+    ta, tb = re.sub(r"[^a-z0-9]", "", _ascii(a.get("title"))), re.sub(r"[^a-z0-9]", "", _ascii(b.get("title")))
+    if min(len(ta), len(tb)) < 20 or (ta != tb and difflib.SequenceMatcher(None, ta, tb, autojunk=False).ratio() < 0.93):
+        return False
+    wa = {w for x in a.get("authors") or [] for w in re.findall(r"[a-z]{3,}", _ascii(x))}
+    wb = {w for x in b.get("authors") or [] for w in re.findall(r"[a-z]{3,}", _ascii(x))}
+    if (wa and wb and not wa & wb) or ((not wa or not wb) and ta != tb):
+        return False
+    ya, yb = a.get("year"), b.get("year")
+    return not ya or not yb or abs(ya - yb) <= 1
+
+
+def copy_sum(cands):
+    """cands [(cid, p, summary)] for one record -> (top cid, its p plus the p of the candidates that are copies of it)."""
+    cid, p, top = max(cands, key=lambda c: (c[1], c[0]))   # an exact tie goes to the higher work id, as decisions.sql
+    return cid, p + sum(pp for c, pp, s in cands if c != cid and is_copy(top, s))

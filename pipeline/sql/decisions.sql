@@ -1,0 +1,82 @@
+-- Match_Locations_To_Works 6/6: one decision per seed record for night __NIGHT__ (mode __MODE__), next to what
+-- the nightly did. The model (strategy 2026-10-15): no candidate or XGBoost top < 0.01 -> mint; else bind Qwen's top when
+-- p >= 0.910 (ep2_9b_old's held-out 99% point; 0.887 for ep2_9b until 2026-10-30), or when its p plus the p of the candidates
+-- that are copies of it reaches 0.910 (qwen_copy_bind, location_work_match_copy_sums from WriteDecisions, 2026-11-01), else mint. No fallback (2026-10-26): every record at >= 0.01 has a Qwen score or the run has already failed,
+-- with one named exception (2026-10-27): qwen_over_cap = the record's prompt fills the token cap before its first
+-- candidate, so Qwen saw nothing to compare; it mints. A record with no Qwen row at all is qwen_missing and fails the night.
+-- A model bind only ever names a work that existed before the run. cmp: same_bind / both_mint / other_work (both bind, different works) / model_mints
+-- (the nightly binds, the model mints) / model_binds (the nightly mints or parks, the model binds). rule_pick = the model's work
+-- is the title tier's own pick; emb_only = the model's work came only from the embedding neighbours.
+CREATE TABLE IF NOT EXISTS openalex.works.location_work_match_decisions (
+  night DATE, mode STRING, provenance STRING, native_id_namespace STRING, native_id STRING, seed_id BIGINT, prov STRING,
+  nightly_decision STRING, nightly_work BIGINT, model_work BIGINT, layer STRING, xgb_work BIGINT, xgb_p DOUBLE,
+  qwen_work BIGINT, qwen_p DOUBLE, cmp STRING, rule_pick INT, emb_only INT, model_version INT, adapter STRING,
+  decided_at TIMESTAMP)
+CLUSTER BY (night)
+COMMENT 'Match Locations To Works: one row per record that reached the model, per night and mode; mode shadow = never applied'
+;
+DELETE FROM openalex.works.location_work_match_decisions WHERE night = DATE'__NIGHT__' AND mode = '__MODE__'
+;
+INSERT INTO openalex.works.location_work_match_decisions
+WITH x AS (
+  SELECT seed_id, max_by(cid, p_raw) AS x_cid, max(p_raw) AS x_p, max(model_version) AS model_version
+  FROM openalex.works.location_work_match_xgb GROUP BY seed_id
+),
+q AS (
+  SELECT seed_id, max_by(cid, struct(p, cid)) FILTER (WHERE p IS NOT NULL) AS q_cid, max(p) AS q_p, max(adapter) AS adapter, bool_or(over_cap) AS over_cap
+  FROM openalex.works.location_work_match_qwen GROUP BY seed_id
+),
+d AS (
+  SELECT s.seed_id, s.provenance, s.native_id_namespace, s.native_id, s.prov, s.decision, s.work_id AS nightly_work,
+    CASE WHEN s.decision = 'title_bind' THEN s.work_id END AS nightly_bind,
+    x.x_cid, x.x_p, q.q_cid, q.q_p, x.model_version, q.adapter, c.cid AS c_cid,
+    CASE WHEN x.x_p IS NULL THEN 'no_candidates'
+         WHEN x.x_p < 0.01 THEN 'xgb_mint'
+         WHEN q.over_cap AND q.q_p IS NULL THEN 'qwen_over_cap'
+         WHEN q.q_p IS NULL THEN 'qwen_missing'
+         WHEN q.q_p >= 0.910 THEN 'qwen_bind'
+         WHEN c.p_sum >= 0.910 THEN 'qwen_copy_bind'
+         ELSE 'qwen_mint' END AS layer
+  FROM openalex.works.location_work_match_seeds s
+  LEFT JOIN x USING (seed_id) LEFT JOIN q USING (seed_id)
+  LEFT JOIN openalex.works.location_work_match_copy_sums c ON c.seed_id = s.seed_id
+),
+m AS (
+  SELECT d.*, CASE layer WHEN 'qwen_bind' THEN q_cid WHEN 'qwen_copy_bind' THEN c_cid END AS model_work FROM d
+)
+SELECT DATE'__NIGHT__', '__MODE__', m.provenance, m.native_id_namespace, m.native_id, m.seed_id, m.prov, m.decision, m.nightly_work,
+  m.model_work, m.layer, m.x_cid, m.x_p, m.q_cid, m.q_p,
+  CASE WHEN m.nightly_bind IS NOT NULL AND m.model_work = m.nightly_bind THEN 'same_bind'
+       WHEN m.nightly_bind IS NULL AND m.model_work IS NULL THEN 'both_mint'
+       WHEN m.nightly_bind IS NOT NULL AND m.model_work IS NOT NULL THEN 'other_work'
+       WHEN m.nightly_bind IS NOT NULL THEN 'model_mints'
+       ELSE 'model_binds' END,
+  CAST(xb.is_bound AS INT),
+  CAST(e.channels IS NOT NULL AND array_contains(e.channels, 'emb') AND size(e.channels) = 1 AS INT),
+  m.model_version, m.adapter, current_timestamp()
+FROM m
+LEFT JOIN openalex.works.location_work_match_xgb xb ON xb.seed_id = m.seed_id AND xb.cid = m.model_work
+LEFT JOIN openalex.works.location_work_match_fp e ON e.seed_id = m.seed_id AND e.cid = m.model_work
+;
+-- The night's shortlists, kept (the working tables are overwritten by the next run): every record's top 10 candidates by
+-- XGBoost with both scores, the title rule's pick and the channels that found each, so a later threshold, judged sample or
+-- error read can see what the model chose from.
+CREATE TABLE IF NOT EXISTS openalex.works.location_work_match_shortlists (
+  night DATE, mode STRING, provenance STRING, native_id_namespace STRING, native_id STRING, seed_id BIGINT, cid BIGINT, rank INT,
+  xgb_p DOUBLE, qwen_p DOUBLE, is_title_pick INT, channels ARRAY<STRING>, model_version INT, adapter STRING)
+CLUSTER BY (night)
+COMMENT 'Map_Work_Ids location matcher: each record''s top 10 candidate works per night with XGBoost and Qwen scores'
+;
+DELETE FROM openalex.works.location_work_match_shortlists WHERE night = DATE'__NIGHT__' AND mode = '__MODE__'
+;
+INSERT INTO openalex.works.location_work_match_shortlists
+SELECT DATE'__NIGHT__', '__MODE__', s.provenance, s.native_id_namespace, s.native_id, x.seed_id, x.cid, x.rank, x.p_raw, q.p,
+  x.is_bound, e.channels, x.model_version, q.adapter
+FROM openalex.works.location_work_match_xgb x
+JOIN openalex.works.location_work_match_seeds s ON s.seed_id = x.seed_id
+LEFT JOIN openalex.works.location_work_match_qwen q ON q.seed_id = x.seed_id AND q.cid = x.cid
+LEFT JOIN openalex.works.location_work_match_fp e ON e.seed_id = x.seed_id AND e.cid = x.cid
+WHERE x.rank <= 10
+;
+SELECT cmp, layer, count(*) AS n FROM openalex.works.location_work_match_decisions
+WHERE night = DATE'__NIGHT__' AND mode = '__MODE__' GROUP BY 1, 2 ORDER BY 1, 2
