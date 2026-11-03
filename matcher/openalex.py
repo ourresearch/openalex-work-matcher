@@ -28,10 +28,13 @@ def wid(x):
 
 
 class OpenAlex:
-    def __init__(self, api_key=None, retries=6, timeout=60):
+    SEMANTIC_GAP = 1.05   # the API allows one semantic search per second per key
+
+    def __init__(self, api_key=None, retries=8, timeout=60):
         self.key = api_key or os.environ.get("OPENALEX_API_KEY")
         self.retries, self.timeout = retries, timeout
         self.calls, self.cost_usd = 0, 0.0
+        self._last_semantic = 0.0
 
     def get(self, path, **params):
         params = {k: v for k, v in params.items() if v is not None}
@@ -40,6 +43,10 @@ class OpenAlex:
         query = urllib.parse.urlencode(params, safe=':,|*"')
         url = f"{API}/{path.lstrip('/')}?{query}"
         for attempt in range(self.retries):
+            if "search.semantic" in params:
+                time.sleep(max(0.0, self._last_semantic + self.SEMANTIC_GAP - time.time()))
+                self._last_semantic = time.time()
+            wait = 2 ** attempt
             try:
                 with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "openalex-work-matcher"}),
                                             timeout=self.timeout) as r:
@@ -55,10 +62,15 @@ class OpenAlex:
                     raise QueryTimeout(f"OpenAlex API query timeout for {path}")
                 if e.code not in (429, 500, 502, 503, 504) or attempt == self.retries - 1:
                     raise RuntimeError(f"OpenAlex API {e.code} for {path}: {body[:300]!r}")
+                if e.code == 429:
+                    try:
+                        wait = max(float(json.loads(body).get("retryAfter") or 1), 1.0) * (1 + attempt)
+                    except ValueError:
+                        pass
             except (urllib.error.URLError, TimeoutError):
                 if attempt == self.retries - 1:
                     raise
-            time.sleep(2 ** attempt)
+            time.sleep(wait)
 
     def list(self, path, per_page=50, **params):
         d = self.get(path, per_page=per_page, **params)

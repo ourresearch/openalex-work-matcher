@@ -5,7 +5,7 @@ first two sections need no GPU, no API key and no private resource. The reposito
 [`tools/fetch_works.py`](tools/fetch_works.py) rebuilds text from the public OpenAlex API when a step needs it. Written for a
 person or an AI agent: each command says what it should print.
 
-You need Python 3.10 or later.
+You need Python 3.11 or later (nameparser 2.1.0, the version the ingest pipeline uses, needs it). The benchmark scripts alone run on Python 3.9 and later with the standard library only.
 
 ```bash
 git clone https://github.com/ourresearch/openalex-work-matcher
@@ -123,13 +123,13 @@ On a GPU this prints one decision per example: the HAL copy of the NumPy paper j
 preprint joins W3035965352 by its DOI (`identifier:doi`), and the made-up record is a new work (`xgb_mint`). Without a GPU,
 `--stage1-only` prints the first two steps' answers and the third's Qwen prompt.
 
-**Agreement with production.** We ran the tool on 400 records of the same production night, against the same works (the API
-served that night's data), and compared with what production decided (one record hit an API timeout, which the client now handles). 397 of 399 records got the same decision: 383 joined the same work through Qwen
-(one of them a copy-sum join in production), 3 through copy sums, and 10 became new works on both sides. In the 2 differences
-the tool joined a work production left separate. The tool's best XGBoost candidate was production's for 396 records; its
-search found 74% of production's candidates and 75% of the works on its top-10 shortlists. That night's comparison included
-the works production had made for those records the same night, so most of them had an exact copy to find; matching records
-as they arrive (below) is the harder test.
+**Agreement with production.** We ran the tool on 1,000 records of the first live night (3 November 2026) as they
+arrived: `--as-of 2026-11-03 --exclude-self`, so works created that night and each record's own copy were left out. The
+records were drawn across production's decisions and weighted back to the night. Weighted, the tool reached production's
+decision for 99.5% of records. Of 650 records production made new works, the tool made 646 new works too. Of 350 records
+production joined to a work, the tool joined 329 to the same work, 2 to another work, and left 19 as new works: it searches
+the API, not OpenAlex's own index, so it sees fewer candidates. An earlier run on the 2 November build, against works that
+already included each record's own new work, agreed on 397 of 399.
 
 Run a record that is already in OpenAlex as if it were arriving with `--as-of <the date it arrived> --exclude-self`: works
 created on or after that date and the record's own copy are left out.
